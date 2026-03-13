@@ -1,4 +1,8 @@
 import streamlit as st
+
+# Mẹo để fix lỗi Safari/iPhone RegEx
+st.markdown("<script>window.MathJax = { skipStartupTypeset: true };</script>", unsafe_allow_html=True)
+import streamlit as st
 import google.generativeai as genai
 from gtts import gTTS
 from streamlit_mic_recorder import speech_to_text
@@ -102,3 +106,4 @@ if user_input:
     # Lưu phản hồi của AI vào lịch sử
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
+
