@@ -27,7 +27,7 @@ else:
     st.stop()
 
 # --- 3. THIẾT LẬP AI ---
-MODEL_ID = "gemini-2.0-flash" # Dùng bản 2.0 mới nhất cực nhanh
+MODEL_ID = "gemini-1.5-flash"
 
 instruction = (
     "You are a sweet, fun English teacher for a little girl named Xu. "
@@ -92,3 +92,4 @@ if user_input:
     
     except Exception as e:
         st.error(f"Lỗi rồi ba Tâm ơi: {str(e)}")
+
