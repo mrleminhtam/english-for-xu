@@ -1,6 +1,5 @@
 import streamlit as st
 from google import genai
-from google.genai import types # Thêm dòng này để định dạng chuẩn
 from gtts import gTTS
 from streamlit_mic_recorder import speech_to_text
 import io
@@ -41,11 +40,11 @@ else:
 # --- 3. THIẾT LẬP AI ---
 MODEL_ID = "gemini-1.5-flash"
 
-# Nội dung hướng dẫn thầy giáo
-instruction_text = (
-    "You are a sweet, fun English teacher for a little girl named Xu. "
-    "1. Speak very simple English. 2. Short sentences only. "
-    "3. Correct her gently. 4. Be very encouraging."
+# Gộp hướng dẫn vào prompt để tránh lỗi Payload
+SYSTEM_PROMPT = (
+    "Context: You are a sweet English teacher for a girl named Xu. "
+    "Rules: Short sentences, simple English, very friendly. "
+    "Now, reply to this: "
 )
 
 # --- 4. GIAO DIỆN CHAT ---
@@ -82,14 +81,12 @@ if user_input:
 
     try:
         with st.spinner("Thầy đang nghe bé Xu..."):
-            # CẤU HÌNH CHUẨN ĐỂ TRÁNH LỖI 400 INVALID_ARGUMENT
+            # CHIÊU CUỐI: Gửi kèm hướng dẫn trực tiếp trong nội dung
+            full_prompt = f"{SYSTEM_PROMPT} {user_input}"
+            
             response = client.models.generate_content(
                 model=MODEL_ID,
-                contents=user_input,
-                config=types.GenerateContentConfig(
-                    system_instruction=instruction_text,
-                    temperature=0.7
-                )
+                contents=full_prompt
             )
             answer = response.text
         
@@ -103,4 +100,4 @@ if user_input:
         st.session_state.messages.append({"role": "assistant", "content": answer})
     
     except Exception as e:
-        st.error(f"Sắp được rồi ba Tâm ơi! Lỗi: {str(e)}")
+        st.error(f"Cố lên ba Tâm ơi! Lỗi này lạ quá: {str(e)}")
