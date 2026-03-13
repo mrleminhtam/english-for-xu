@@ -42,8 +42,7 @@ instruction = (
     "3. Keep responses short (max 2 sentences). 4. Correct her gently. "
     "5. Use friendly words like 'sweetie', 'dear', or 'great job'."
 )
-model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=instruction)
-
+model = genai.GenerativeModel("gemini-1.5-flash-latest", system_instruction=instruction)
 # --- GIAO DIỆN CHÍNH ---
 st.title("👧 Hello Xu! Let's talk!")
 st.write("Bé Xu nhấn nút micro màu hồng rồi nói chuyện với thầy nhé!")
@@ -101,4 +100,5 @@ if user_input:
             st.warning("Loa của thầy gặp chút trục trặc, bé đọc chữ giúp thầy nhé!")
 
     # Lưu phản hồi của AI vào lịch sử
+
     st.session_state.messages.append({"role": "assistant", "content": answer})
