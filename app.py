@@ -6,69 +6,40 @@ import io
 
 # --- 1. CẤU HÌNH TRANG ---
 st.set_page_config(page_title="English for Xu", page_icon="👧")
-
-# Fix lỗi hiển thị cho iPhone
 st.markdown("<script>window.MathJax = { skipStartupTypeset: true };</script>", unsafe_allow_html=True)
 
-# Giao diện màu hồng
-st.markdown("""
-    <style>
-    .stButton > button {
-        background-color: #FFC0CB;
-        color: #515151;
-        border-radius: 20px;
-        font-weight: bold;
-        border: none;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- 2. KẾT NỐI API ---
+# --- 2. KẾT NỐI API (CHỈNH SỬA QUAN TRỌNG TẠI ĐÂY) ---
 if "GEMINI_API_KEY" in st.secrets:
     try:
         client = genai.Client(
             api_key=st.secrets["GEMINI_API_KEY"],
-            http_options={'api_version': 'v1'}
+            http_options={'api_version': 'v1beta'} # Quay lại bản beta để nhận diện model dễ hơn
         )
     except Exception as e:
-        st.error(f"Lỗi cấu hình: {e}")
+        st.error(f"Lỗi: {e}")
         st.stop()
 else:
-    st.error("Ba Tâm ơi, hãy dán API Key vào mục Secrets nhé!")
+    st.error("Ba Tâm ơi, dán Key vào Secrets nhé!")
     st.stop()
 
 # --- 3. THIẾT LẬP AI ---
+# Dùng tên model đầy đủ nhất để v1beta không bị nhầm
 MODEL_ID = "gemini-1.5-flash"
 
-# Gộp hướng dẫn vào prompt để tránh lỗi Payload
-SYSTEM_PROMPT = (
-    "Context: You are a sweet English teacher for a girl named Xu. "
-    "Rules: Short sentences, simple English, very friendly. "
-    "Now, reply to this: "
-)
+SYSTEM_PROMPT = "Context: You are a sweet English teacher for a girl named Xu. Rules: Short sentences, simple English. Reply to this: "
 
-# --- 4. GIAO DIỆN CHAT ---
+# --- 4. GIAO DIỆN ---
 st.title("👧 Hello Xu! Let's talk!")
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "messages" not in st.session_state: st.session_state.messages = []
 
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    with st.chat_message(message["role"]): st.markdown(message["content"])
 
-# --- 5. XỬ LÝ NÓI & NHẮN TIN ---
+# --- 5. XỬ LÝ ---
 st.write("---")
 col1, col2 = st.columns([1, 2])
-
 with col1:
-    audio_text = speech_to_text(
-        start_prompt="🎤 Nhấn nói",
-        stop_prompt="🛑 Dừng",
-        language='en',
-        key='speech_input'
-    )
-
+    audio_text = speech_to_text(start_prompt="🎤 Nhấn nói", stop_prompt="🛑 Dừng", language='en', key='speech_input')
 with col2:
     chat_text = st.chat_input("Hoặc gõ ở đây...")
 
@@ -76,17 +47,14 @@ user_input = audio_text if audio_text else chat_text
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
+    with st.chat_message("user"): st.markdown(user_input)
 
     try:
-        with st.spinner("Thầy đang nghe bé Xu..."):
-            # CHIÊU CUỐI: Gửi kèm hướng dẫn trực tiếp trong nội dung
-            full_prompt = f"{SYSTEM_PROMPT} {user_input}"
-            
+        with st.spinner("Thầy đang nghe..."):
+            # Gửi prompt đơn giản nhất để tránh lỗi 400
             response = client.models.generate_content(
                 model=MODEL_ID,
-                contents=full_prompt
+                contents=f"{SYSTEM_PROMPT} {user_input}"
             )
             answer = response.text
         
@@ -96,8 +64,6 @@ if user_input:
             fp = io.BytesIO()
             tts.write_to_fp(fp)
             st.audio(fp, format='audio/mp3', autoplay=True)
-
         st.session_state.messages.append({"role": "assistant", "content": answer})
-    
     except Exception as e:
-        st.error(f"Cố lên ba Tâm ơi! Lỗi này lạ quá: {str(e)}")
+        st.error(f"Sắp xong rồi ba Tâm! Thử lại phát nữa: {str(e)}")
