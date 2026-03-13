@@ -4,40 +4,61 @@ from gtts import gTTS
 from streamlit_mic_recorder import speech_to_text
 import io
 
-# Cấu hình AI
+# --- CẤU HÌNH TRANG ---
+st.set_page_config(page_title="English for Xu", page_icon="👧")
+
+# --- KẾT NỐI API ---
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("Ba Tâm dán Key vào Secrets nhé!")
+    st.error("Ba Tâm ơi, hãy dán API Key vào mục Secrets nhé!")
     st.stop()
 
-# Thiết lập thầy giáo
-model = genai.GenerativeModel("gemini-1.5-flash")
+# --- THIẾT LẬP THẦY GIÁO (BẢN 8B ĐỂ TRÁNH LỖI 404) ---
+# Đây là thay đổi quan trọng nhất để thông lỗi 404
+MODEL_ID = "gemini-1.5-flash-8b"
+model = genai.GenerativeModel(MODEL_ID)
 
 st.title("👧 Hello Xu! Let's talk!")
 
-# Nhận diện giọng nói hoặc văn bản
+# Hiển thị lịch sử chat
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# --- XỬ LÝ NÓI & NHẮN TIN ---
+st.write("---")
 col1, col2 = st.columns([1, 2])
 with col1:
-    audio_text = speech_to_text(start_prompt="🎤 Nói", stop_prompt="🛑 Dừng", language='en')
+    # Nút mic màu hồng cho bé Xu
+    audio_text = speech_to_text(start_prompt="🎤 Nói", stop_prompt="🛑 Dừng", language='en', key='speech_input')
 with col2:
     chat_text = st.chat_input("Nhắn cho thầy...")
 
 user_input = audio_text if audio_text else chat_text
 
 if user_input:
+    st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
-        st.write(user_input)
-    
+        st.markdown(user_input)
+
     try:
-        response = model.generate_content(f"You are a teacher for a girl named Xu. Reply very short: {user_input}")
-        answer = response.text
+        with st.spinner("Thầy đang nghe..."):
+            # Gửi yêu cầu cho AI
+            response = model.generate_content(f"You are a sweet teacher for a girl named Xu. Reply short in English: {user_input}")
+            answer = response.text
         
         with st.chat_message("assistant"):
-            st.write(answer)
+            st.markdown(answer)
+            # Phát âm thanh cho bé nghe
             tts = gTTS(text=answer, lang='en')
             fp = io.BytesIO()
             tts.write_to_fp(fp)
             st.audio(fp, format='audio/mp3', autoplay=True)
+            
+        st.session_state.messages.append({"role": "assistant", "content": answer})
     except Exception as e:
-        st.error(f"Lỗi AI: {e}")
+        st.error(f"Lỗi AI: {str(e)}")
