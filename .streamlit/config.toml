@@ -3,3 +3,6 @@ gatherUsageStats = false
 
 [client]
 showErrorDetails = false
+
+[theme]
+primaryColor = "#FFC0CB"
