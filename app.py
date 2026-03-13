@@ -6,14 +6,13 @@ import io
 
 # --- 1. CẤU HÌNH TRANG ---
 st.set_page_config(page_title="English for Xu", page_icon="👧")
-st.markdown("<script>window.MathJax = { skipStartupTypeset: true };</script>", unsafe_allow_html=True)
 
-# --- 2. KẾT NỐI API (CHỈNH SỬA QUAN TRỌNG TẠI ĐÂY) ---
+# --- 2. KẾT NỐI API ---
 if "GEMINI_API_KEY" in st.secrets:
     try:
         client = genai.Client(
             api_key=st.secrets["GEMINI_API_KEY"],
-            http_options={'api_version': 'v1beta'} # Quay lại bản beta để nhận diện model dễ hơn
+            http_options={'api_version': 'v1beta'}
         )
     except Exception as e:
         st.error(f"Lỗi: {e}")
@@ -23,10 +22,10 @@ else:
     st.stop()
 
 # --- 3. THIẾT LẬP AI ---
-# Dùng tên model đầy đủ nhất để v1beta không bị nhầm
-MODEL_ID = "gemini-1.5-flash"
+# Dùng 1.0 Pro để trị dứt điểm lỗi 404
+MODEL_ID = "gemini-1.0-pro"
 
-SYSTEM_PROMPT = "Context: You are a sweet English teacher for a girl named Xu. Rules: Short sentences, simple English. Reply to this: "
+SYSTEM_PROMPT = "You are a sweet English teacher for a girl named Xu. Short sentences, simple English. Reply to: "
 
 # --- 4. GIAO DIỆN ---
 st.title("👧 Hello Xu! Let's talk!")
@@ -51,7 +50,7 @@ if user_input:
 
     try:
         with st.spinner("Thầy đang nghe..."):
-            # Gửi prompt đơn giản nhất để tránh lỗi 400
+            # Gọi trực tiếp không qua chat session cho nhẹ
             response = client.models.generate_content(
                 model=MODEL_ID,
                 contents=f"{SYSTEM_PROMPT} {user_input}"
@@ -66,4 +65,4 @@ if user_input:
             st.audio(fp, format='audio/mp3', autoplay=True)
         st.session_state.messages.append({"role": "assistant", "content": answer})
     except Exception as e:
-        st.error(f"Sắp xong rồi ba Tâm! Thử lại phát nữa: {str(e)}")
+        st.error(f"Ba Tâm thử đổi model xem sao: {str(e)}")
