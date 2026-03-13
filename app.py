@@ -4,28 +4,22 @@ from gtts import gTTS
 from streamlit_mic_recorder import speech_to_text
 import io
 
-# --- 1. CẤU HÌNH TRANG ---
+# --- 1. CẤU HÌNH ---
 st.set_page_config(page_title="English for Xu", page_icon="👧")
 
-# --- 2. KẾT NỐI API (DÙNG BẢN CŨ NHƯNG ỔN ĐỊNH) ---
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("Ba Tâm ơi, dán Key vào Secrets nhé!")
+    st.error("Ba Tâm dán Key vào Secrets nhé!")
     st.stop()
 
-# --- 3. THIẾT LẬP MODEL ---
-# Dùng tên model rút gọn - Đây là chìa khóa để hết 404
-MODEL_ID = "gemini-1.5-flash"
+# --- 2. THIẾT LẬP THẦY GIÁO ---
+# Thử dùng bản gemini-1.5-flash-8b (bản này cực nhẹ và ít lỗi 404 nhất)
+MODEL_ID = "gemini-1.5-flash-8b" 
 
-instruction = (
-    "You are a sweet, fun English teacher for a little girl named Xu. "
-    "Speak very simple English. Short sentences only. Be very encouraging."
-)
+prompt_prefix = "You are a sweet English teacher for a girl named Xu. Speak simple English, short sentences. Answer this: "
 
-model = genai.GenerativeModel(model_name=MODEL_ID, system_instruction=instruction)
-
-# --- 4. GIAO DIỆN ---
+# --- 3. GIAO DIỆN ---
 st.title("👧 Hello Xu! Let's talk!")
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -34,7 +28,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 5. XỬ LÝ NÓI & NHẮN TIN ---
+# --- 4. XỬ LÝ ---
 st.write("---")
 col1, col2 = st.columns([1, 2])
 with col1:
@@ -50,9 +44,10 @@ if user_input:
         st.markdown(user_input)
 
     try:
-        with st.spinner("Thầy đang nghe bé Xu..."):
-            # Gọi API theo cách truyền thống
-            response = model.generate_content(user_input)
+        with st.spinner("Thầy đang nghe..."):
+            # Cách gọi đơn giản nhất để không bị lỗi 404
+            model = genai.GenerativeModel(MODEL_ID)
+            response = model.generate_content(f"{prompt_prefix} {user_input}")
             answer = response.text
         
         with st.chat_message("assistant"):
@@ -64,5 +59,4 @@ if user_input:
             
         st.session_state.messages.append({"role": "assistant", "content": answer})
     except Exception as e:
-        st.error(f"Lỗi: {str(e)}")
-        st.info("Ba Tâm ơi, thử lấy API Key từ một Gmail mới hoàn toàn xem sao!")
+        st.error(f"Vẫn lỗi 404 à anh? Thử nút Reboot app nhé! Lỗi: {str(e)}")
