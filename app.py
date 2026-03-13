@@ -1,14 +1,11 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 from gtts import gTTS
 from streamlit_mic_recorder import speech_to_text
 import io
 
-# --- 1. CẤU HÌNH TRANG & FIX LỖI IPHONE ---
+# --- 1. CẤU HÌNH TRANG ---
 st.set_page_config(page_title="English for Xu", page_icon="👧")
-
-# Fix lỗi RegEx trên Safari/Chrome iPhone
-st.markdown("<script>window.MathJax = { skipStartupTypeset: true };</script>", unsafe_allow_html=True)
 
 # Giao diện màu hồng cho bé Xu
 st.markdown("""
@@ -22,24 +19,21 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. CẤU HÌNH API (BẢO MẬT) ---
+# --- 2. CẤU HÌNH API MỚI ---
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("Ba Tâm ơi, hãy dán API Key mới vào mục Secrets nhé!")
+    st.error("Ba Tâm ơi, hãy dán API Key vào mục Secrets nhé!")
     st.stop()
 
 # --- 3. THIẾT LẬP AI ---
-# Dùng tên model ngắn gọn nhất để tránh lỗi 404
-MODEL_NAME = "gemini-1.5-flash"
+MODEL_ID = "gemini-2.0-flash" # Dùng bản 2.0 mới nhất cực nhanh
 
 instruction = (
     "You are a sweet, fun English teacher for a little girl named Xu. "
-    "1. Use very simple English. 2. Topics: anything Xu likes. "
-    "3. Responses: 1-2 short sentences. 4. Correct her gently."
+    "1. Use very simple English. 2. Responses: 1-2 short sentences. "
+    "3. Correct her gently. 4. Be very friendly."
 )
-
-model = genai.GenerativeModel(model_name=MODEL_NAME, system_instruction=instruction)
 
 # --- 4. GIAO DIỆN CHÍNH ---
 st.title("👧 Hello Xu! Let's talk!")
@@ -76,8 +70,12 @@ if user_input:
         st.markdown(user_input)
 
     try:
-        # Gọi AI (Dùng phương thức trực tiếp nhất)
-        response = model.generate_content(user_input)
+        # Gọi AI theo cú pháp thư viện MỚI
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=user_input,
+            config={'system_instruction': instruction}
+        )
         answer = response.text
         
         # Hiển thị và phát âm thanh
@@ -93,6 +91,4 @@ if user_input:
         st.session_state.messages.append({"role": "assistant", "content": answer})
     
     except Exception as e:
-        # Nếu vẫn lỗi 404, hiển thị thông báo hướng dẫn ba Tâm
-        st.error(f"Thầy đang bận một chút, ba Tâm kiểm tra lại API Key nhé!")
-        st.info("Lưu ý: Anh cần dùng API Key từ 'New Project' trong AI Studio.")
+        st.error(f"Lỗi rồi ba Tâm ơi: {str(e)}")
